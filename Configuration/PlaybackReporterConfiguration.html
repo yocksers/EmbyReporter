@@ -1,0 +1,137 @@
+<div is="emby-scroller" class="view flex flex-direction-column scrollFrameY flex-grow" data-horizontal="false" data-forcescrollbar="true" data-centerfocus="true" data-bindheader="true" data-controller="__plugin/PlaybackReporterConfigurationjs" data-title="Playback Reporter">
+    <style>
+        .logging-list .listItem:not(:first-child) {
+            border-top: 1px solid #222;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .help-page h2 {
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+        }
+
+        .help-page h3 {
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            color: #52B54B;
+        }
+
+        .help-page p {
+            margin-bottom: 0.5em;
+            line-height: 1.5;
+        }
+
+        .help-page code {
+            background-color: rgba(0,0,0,0.3);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        .help-page pre {
+            background-color: rgba(0,0,0,0.3);
+            padding: 1em;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+    <div class="scrollSlider flex-direction-column padded-left padded-left-page padded-right padded-top-page padded-bottom-page">
+        <div class="readOnlyContent auto-center" style="max-width: 1200px;">
+            <h1 class="pageTitle">Playback Reporter</h1>
+
+            <form class="playbackReporterForm">
+                <div class="paper-card" style="padding: 1.5em; margin-top: 2em;">
+                    <h2 style="margin-top:0;">Settings</h2>
+                    <div class="checkboxContainer">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="chkEnablePlaybackIssueNotifications" data-config-key="EnablePlaybackIssueNotifications" />
+                            <span>Enable Server Notifications (e.g., Pushover)</span>
+                        </label>
+                        <div class="fieldDescription">Sends a notification through Emby's notification system when a user reports a playback issue.</div>
+                    </div>
+                </div>
+
+                <div class="paper-card help-page" style="padding: 1.5em 2em; margin-top: 2em;">
+                    <h2 style="margin-top: 0;">How to Use</h2>
+                    <p>Once the client script is installed (see <strong>Action Sheet Integration</strong> below), users can report a playback problem directly from the media action sheet — no bookmarks or extra steps required.</p>
+
+                    <h3>Reporting an Issue</h3>
+                    <ol>
+                        <li>Open any movie or episode in the Emby web client.</li>
+                        <li>Click the action menu (<strong>⋮</strong> or the three-dot button) for that item.</li>
+                        <li>Select <strong>Report Issue</strong> from the menu.</li>
+                        <li>Enter a short description of the problem and confirm.</li>
+                    </ol>
+                    <p>The report will appear in the <strong>Issue Reports</strong> log below, and a server notification will be sent if that option is enabled.</p>
+
+                    <h3>Bookmarklet (alternative method)</h3>
+                    <p>If you prefer not to install the client script, you can use the bookmarklet below as a fallback. Create a browser bookmark and paste the code into its URL field. Then navigate to the details page of a movie or episode in the Emby web client and click the bookmark to report an issue.</p>
+                    <textarea id="we-bookmarklet-text" rows="5" style="width:100%; white-space: pre-wrap; word-break: break-all;" readonly></textarea>
+                </div>
+
+                <div class="paper-card help-page" style="padding: 1.5em 2em; margin-top: 2em;">
+                    <h2 style="margin-top: 0;">External API</h2>
+                    <p>You can retrieve the list of reported issues using an external application like Home Assistant. This allows for creating automations or custom notifications.</p>
+                    <h3>Authentication</h3>
+                    <p>API requests are authenticated using a standard Emby API key. You can generate one in your Emby Server Dashboard under <strong>API Keys</strong>. The key must be sent as a URL parameter.</p>
+                    <h3>GET /EmbyReporter/Public/Issues</h3>
+                    <p>Retrieves a list of the most recent playback issue reports (up to 200).</p>
+                    <p><strong>Example Request URL:</strong></p>
+                    <code>http://[your-emby-address]:8096/EmbyReporter/Public/Issues?api_key=YOUR_EMBY_API_KEY</code>
+                    <p><strong>Example Response:</strong></p>
+                    <pre>[
+    {
+        "Timestamp": "2025-11-01T10:30:00Z",
+        "EventType": "Playback Issue",
+        "Username": "TestUser",
+        "ClientName": "Chrome",
+        "ItemName": "My Movie (2025)",
+        "LibraryName": "Movies",
+        "Description": "Audio is out of sync",
+        "Path": "/data/movies/My Movie (2025)/movie.mkv"
+    }
+]</pre>
+                </div>
+
+
+                <div class="paper-card" style="padding: 1.5em; margin-top: 2em;">
+                    <h2 style="margin-top:0;">Action Sheet Integration</h2>
+                    <p class="fieldDescription">Adds a <strong>"Report Issue"</strong> option directly into the Emby media action sheet. Clicking <strong>Install</strong> replaces <code>dashboard-ui/modules/actionsheet/actionsheet.js</code> with the plugin's modified version (the original is backed up automatically). Clicking <strong>Remove</strong> restores the original file.</p>
+                    <div style="display: flex; gap: 1em; margin-top: 1em; flex-wrap: wrap;">
+                        <button is="emby-button" type="button" class="raised button-submit" id="btnInjectScript">
+                            <span>Install Client Script</span>
+                        </button>
+                        <button is="emby-button" type="button" class="raised button-cancel" id="btnRemoveScript">
+                            <span>Remove Client Script</span>
+                        </button>
+                    </div>
+                    <p id="scriptStatusMessage" style="margin-top: 1em; display: none;"></p>
+                </div>
+
+                <div class="paper-card" style="padding: 1.5em; margin-top: 2em;">
+                    <div class="page-header">
+                        <h2 style="margin:0;">Issue Reports</h2>
+                        <button is="emby-button" type="button" class="raised button-cancel" id="btnClearLog">
+                            <span>Clear Reports</span>
+                        </button>
+                    </div>
+                    <div class="fieldDescription">Shows the last 200 reported playback issues.</div>
+                    <div id="logContainer" class="logging-list" style="margin-top:1.5em;">
+                    </div>
+                </div>
+
+                <div style="margin-top: 2em;">
+                    <button is="emby-button" type="submit" class="raised button-submit block">
+                        <span>Save</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
