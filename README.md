@@ -12,4 +12,4 @@ This will requires the plugin to change the internal Emby file actionsheet.js, t
 A backup of the file is made for easy manual undo of the change.
 
 WARNING!!!
-This is easy beta so there might be bugs.
+This is early beta so there might be bugs.
