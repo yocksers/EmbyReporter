@@ -18,7 +18,11 @@ namespace EmbyReporter.Api
     }
 
     [Route(ApiRoutes.PublicGetIssueReports, "GET", Summary = "Gets the list of all reported playback issues.")]
-    public class PublicGetIssueReportsRequest : IReturn<List<LogEntry>> { }
+    public class PublicGetIssueReportsRequest : IReturn<List<LogEntry>>
+    {
+        public int? Skip { get; set; }
+        public int? Take { get; set; }
+    }
 
     [Route(ApiRoutes.InjectScript, "POST", Summary = "Copies report.js into dashboard-ui and injects its script tag into index.html.")]
     public class InjectScriptRequest : IReturn<ScriptInjectionResult> { }

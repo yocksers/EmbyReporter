@@ -35,7 +35,7 @@ namespace EmbyReporter
         private static readonly object _saveLock = new object();
 
         private static readonly ConcurrentQueue<LogEntry> _logEntries = new();
-        private const int MaxLogEntries = 200;
+        public const int MaxLogEntries = 200;
 
         public static void Start(ILogger logger, IJsonSerializer jsonSerializer, IApplicationPaths appPaths)
         {
@@ -109,9 +109,9 @@ namespace EmbyReporter
             SaveLogs();
         }
 
-        public static IEnumerable<LogEntry> GetLogEntries()
+        public static IReadOnlyList<LogEntry> GetLogEntries()
         {
-            return _logEntries.OrderByDescending(e => e.Timestamp);
+            return _logEntries.OrderByDescending(e => e.Timestamp).ToList();
         }
 
         public static void ClearLogs()

@@ -19,13 +19,27 @@ namespace EmbyReporter.Services
             _logger = logManager.GetLogger(GetType().Name);
         }
 
-        private static string TargetPath => Path.Combine(AppContext.BaseDirectory, RelativeTarget);
+        private static string TargetPath => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, RelativeTarget));
         private static string BackupPath => TargetPath + ".bak";
+
+        private static bool IsPathWithinBaseDirectory(string fullPath)
+        {
+            var baseDir = Path.GetFullPath(AppContext.BaseDirectory)
+                             .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                          + Path.DirectorySeparatorChar;
+            return fullPath.StartsWith(baseDir, StringComparison.OrdinalIgnoreCase);
+        }
 
         public object Post(InjectScriptRequest request)
         {
             var targetPath = TargetPath;
             var backupPath = BackupPath;
+
+            if (!IsPathWithinBaseDirectory(targetPath))
+            {
+                _logger.Error($"[ScriptInjectionService] Resolved target path is outside the Emby base directory: {targetPath}");
+                return new ScriptInjectionResult { Success = false, Message = "Security error: target path is outside the allowed directory." };
+            }
 
             if (!File.Exists(targetPath))
             {
@@ -61,6 +75,12 @@ namespace EmbyReporter.Services
         {
             var targetPath = TargetPath;
             var backupPath = BackupPath;
+
+            if (!IsPathWithinBaseDirectory(targetPath))
+            {
+                _logger.Error($"[ScriptInjectionService] Resolved target path is outside the Emby base directory: {targetPath}");
+                return new ScriptInjectionResult { Success = false, Message = "Security error: target path is outside the allowed directory." };
+            }
 
             if (!File.Exists(backupPath))
             {

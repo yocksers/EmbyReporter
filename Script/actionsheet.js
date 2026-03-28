@@ -282,7 +282,6 @@ define(["exports", "./../emby-apiclient/connectionmanager.js", "./../dom.js", ".
                 if (selectedMenuItem && selectedMenuItem.Id === 'reportIssue') {
                     const mediaItem = options.item;
                     const apiClient = _connectionmanager.default.getApiClient(mediaItem);
-                    console.log('Reporting issue for:', mediaItem.Name);
                     const description = prompt(`Please describe the playback problem for "${mediaItem.Name}":`, '');
                     if (description !== null && description.trim() !== "") {
                         const endpoint = '/EmbyReporter/ReportIssue';
@@ -360,7 +359,7 @@ define(["exports", "./../emby-apiclient/connectionmanager.js", "./../dom.js", ".
     }, ActionSheet.prototype.isShowing = function() {
         return null != this.dlg
     }, ActionSheet.prototype.autoFocus = function(options) {
-        console.log("focusing actionsheet"), autoFocusInternal(this.dlg, options)
+        autoFocusInternal(this.dlg, options)
     }, ActionSheet.prototype.close = function() {
         var dlg = this.dlg;
         dlg && _dialoghelper.default.close(dlg)

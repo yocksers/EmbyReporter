@@ -15,7 +15,7 @@ namespace EmbyReporter.Services
     {
         public IRequest Request { get; set; } = default!;
         private readonly ISessionManager _sessionManager;
-        private readonly ILogger _logger;
+        private readonly ILogger? _logger;
         private readonly ILibraryManager _libraryManager;
 
         public IssueReportService(ISessionManager sessionManager, ILogManager logManager, ILibraryManager libraryManager)
@@ -42,6 +42,23 @@ namespace EmbyReporter.Services
                 return;
             }
 
+            // Guard against excessively long inputs
+            if (request.ItemId.Length > 256)
+            {
+                _logger?.Warn("[IssueReportService] ItemId exceeds maximum allowed length.");
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(request.Description) && request.Description.Length > 500)
+            {
+                request = new ReportIssueRequest
+                {
+                    ItemId = request.ItemId,
+                    ItemName = request.ItemName,
+                    Description = request.Description.Substring(0, 500)
+                };
+            }
+
             string? deviceId = null;
 
             try
@@ -62,7 +79,7 @@ namespace EmbyReporter.Services
             }
             catch (Exception ex)
             {
-                _logger.Warn($"Failed to parse X-Emby-Authorization header: {ex.Message}");
+                _logger?.Warn($"Failed to parse X-Emby-Authorization header: {ex.Message}");
             }
 
             if (string.IsNullOrWhiteSpace(deviceId))
@@ -71,12 +88,21 @@ namespace EmbyReporter.Services
                 {
                     deviceId = Request.QueryString["X-Emby-Device-Id"] ?? Request.QueryString["X-Emby-DeviceId"];
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    _logger?.Warn($"[IssueReportService] Failed to read DeviceId from query string: {ex.Message}");
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(deviceId) && deviceId.Length > 256)
+            {
+                _logger?.Warn("[IssueReportService] DeviceId exceeds maximum allowed length — ignoring.");
+                deviceId = null;
             }
 
             if (string.IsNullOrWhiteSpace(deviceId))
             {
-                _logger.Warn("DeviceId not found in headers or query string - cannot determine session for ReportIssue.");
+                _logger?.Warn("DeviceId not found in headers or query string - cannot determine session for ReportIssue.");
                 return;
             }
 
@@ -86,7 +112,7 @@ namespace EmbyReporter.Services
 
             if (session == null)
             {
-                _logger.Warn($"Could not find active session for DeviceId: {deviceId}. Report issue failed.");
+                _logger?.Warn($"Could not find active session for DeviceId: {deviceId}. Report issue failed.");
                 return;
             }
 
@@ -173,7 +199,10 @@ namespace EmbyReporter.Services
                         if (!string.IsNullOrWhiteSpace(libraryName)) break;
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    _logger?.Warn($"[IssueReportService] Failed to determine library name for path '{itemPath}': {ex.Message}");
+                }
             }
 
             var config = Plugin.Instance?.Configuration;

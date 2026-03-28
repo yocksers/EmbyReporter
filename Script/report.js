@@ -30,15 +30,17 @@
                             ''
                         );
                         if (description !== null && description.trim() !== '') {
+                            var trimmedDescription = description.trim().slice(0, 500);
                             var apiClient = connectionManager.getApiClient(item);
                             apiClient.ajax({
                                 type: 'POST',
                                 url: apiClient.getUrl('/EmbyReporter/ReportIssue'),
                                 contentType: 'application/json',
+                                timeout: 10000,
                                 data: JSON.stringify({
                                     ItemId: item.Id,
                                     ItemName: item.Name,
-                                    Description: description
+                                    Description: trimmedDescription
                                 })
                             }).then(function () {
                                 alert('Playback issue reported successfully!');
