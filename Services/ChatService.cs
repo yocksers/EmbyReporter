@@ -136,7 +136,7 @@ namespace EmbyReporter.Services
                 return;
             }
 
-            var pending = LogManager.GetPendingReportsForUser(userId);
+            var pending = LogManager.GetActiveReportsForUser(userId);
             var report = pending.FirstOrDefault(r =>
                 string.Equals(r.ReportId, request.ReportId, StringComparison.Ordinal));
 

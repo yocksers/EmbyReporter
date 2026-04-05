@@ -296,11 +296,11 @@
 
             headerRow.appendChild(titleWrap);
 
-            if (needsAction) {
+            if (canComment) {
                 var confirmBtn = document.createElement('button');
                 confirmBtn.className = 'erb-confirm-btn';
-                confirmBtn.textContent = 'Confirm Fixed \u2714';
-                confirmBtn.style.cssText = 'flex-shrink:0;padding:0.35em 0.8em;border:none;background:#52B54B;color:#fff;border-radius:4px;cursor:pointer;font-size:0.8em;font-family:inherit;white-space:nowrap;';
+                confirmBtn.textContent = 'Close Issue \u2714';
+                confirmBtn.style.cssText = 'flex-shrink:0;padding:0.5em 1.2em;border:none;background:#52B54B;color:#fff;border-radius:4px;cursor:pointer;font-size:0.95em;font-family:inherit;white-space:nowrap;font-weight:bold;';
                 confirmBtn.addEventListener('click', function () {
                     var reportId = block.getAttribute('data-reportid');
                     var ta = block.querySelector('.erb-response-text');
