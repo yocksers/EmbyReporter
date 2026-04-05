@@ -10,6 +10,58 @@
             align-items: center;
         }
 
+        .er-status-badge {
+            display: inline-block;
+            border-radius: 3px;
+            padding: 0.15em 0.55em;
+            font-size: 0.75em;
+            font-weight: normal;
+            vertical-align: middle;
+            color: #fff;
+        }
+
+        .er-chat-thread {
+            margin-top: 0.8em;
+            border-left: 2px solid rgba(255,255,255,0.1);
+            padding-left: 0.8em;
+        }
+
+        .er-chat-bubble {
+            padding: 0.4em 0.7em;
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 0.45em;
+        }
+
+        .er-chat-meta {
+            font-size: 0.75em;
+            color: #999;
+            margin-bottom: 0.15em;
+        }
+
+        .er-chat-text {
+            color: #ddd;
+            word-break: break-word;
+        }
+
+        .er-reply-area {
+            margin-top: 0.8em;
+        }
+
+        .er-reply-area textarea {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #ddd;
+            border-radius: 4px;
+            padding: 0.5em;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 0.9em;
+            display: block;
+            margin-bottom: 0.5em;
+        }
+
         .help-page h2 {
             margin-top: 1.5em;
             margin-bottom: 0.5em;
@@ -114,13 +166,18 @@
 
                 <div class="paper-card" style="padding: 1.5em; margin-top: 2em;">
                     <h2 style="margin-top:0;">Action Sheet Integration</h2>
-                    <p class="fieldDescription">Adds a <strong>"Report Issue"</strong> option directly into the Emby media action sheet. Clicking <strong>Install</strong> replaces <code>dashboard-ui/modules/actionsheet/actionsheet.js</code> with the plugin's modified version (the original is backed up automatically). Clicking <strong>Remove</strong> restores the original file.</p>
+                    <p class="fieldDescription">Clicking <strong>Install</strong> makes two changes to the Emby web client:</p>
+                    <ul class="fieldDescription" style="margin:0.4em 0 0.8em 1.4em;padding:0;">
+                        <li>Replaces <code>dashboard-ui/modules/actionsheet/actionsheet.js</code> with a modified version that adds a <strong>"Report Issue"</strong> option to the media action sheet (original backed up automatically).</li>
+                        <li>Copies <code>emby-reporter-badge.js</code> into <code>dashboard-ui/</code> and injects a <code>&lt;script&gt;</code> tag into <code>dashboard-ui/index.html</code> so a reply-notification button appears above <strong>My Media</strong> on the home screen whenever an admin has replied to one of your reports (original index.html backed up automatically).</li>
+                    </ul>
+                    <p class="fieldDescription">Clicking <strong>Remove</strong> restores both original files and deletes the badge script.</p>
                     <div style="display: flex; gap: 1em; margin-top: 1em; flex-wrap: wrap;">
                         <button is="emby-button" type="button" class="raised button-submit" id="btnInjectScript">
-                            <span>Install Client Script</span>
+                            <span>Install Client Scripts</span>
                         </button>
                         <button is="emby-button" type="button" class="raised button-cancel" id="btnRemoveScript">
-                            <span>Remove Client Script</span>
+                            <span>Remove Client Scripts</span>
                         </button>
                     </div>
                     <p id="scriptStatusMessage" style="margin-top: 1em; display: none;"></p>

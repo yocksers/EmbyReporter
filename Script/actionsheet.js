@@ -378,4 +378,5 @@ define(["exports", "./../emby-apiclient/connectionmanager.js", "./../dom.js", ".
         },
         constructor: ActionSheet
     }
+
 });

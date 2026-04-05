@@ -7,6 +7,7 @@ using MediaBrowser.Model.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using EmbyReporter.Api;
 
 namespace EmbyReporter.Services
@@ -212,6 +213,79 @@ namespace EmbyReporter.Services
             }
 
             LogManager.LogPlaybackIssue(request.ItemId, resolvedName, request.Description, libraryName, userId, username, clientName, itemPath);
+        }
+
+        private void PushUpdateToUser(string reportId)
+        {
+            try
+            {
+                var userId = LogManager.GetReportUserId(reportId);
+                if (string.IsNullOrWhiteSpace(userId)) return;
+
+                var session = _sessionManager.Sessions.FirstOrDefault(s =>
+                    string.Equals(s.UserId, userId, StringComparison.OrdinalIgnoreCase) && s.IsActive);
+                if (session == null) return;
+
+                _ = _sessionManager.SendMessageToUserSessions(
+                    new long[] { session.UserInternalId },
+                    "EmbyReporterUpdate",
+                    new { ReportId = reportId },
+                    CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger?.Warn($"[IssueReportService] WebSocket push failed: {ex.Message}");
+            }
+        }
+
+        public void Post(AdminReplyRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.ReportId) || request.ReportId.Length > 64)
+            {
+                _logger?.Warn("[IssueReportService] AdminReply: invalid ReportId.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Message))
+            {
+                _logger?.Warn("[IssueReportService] AdminReply: empty message.");
+                return;
+            }
+
+            var message = request.Message.Length > 1000 ? request.Message.Substring(0, 1000) : request.Message;
+
+            if (LogManager.AddAdminMessage(request.ReportId, message))
+                PushUpdateToUser(request.ReportId);
+            else
+                _logger?.Warn($"[IssueReportService] AdminReply: report {request.ReportId} not found.");
+        }
+
+        public void Post(DeleteReportRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.ReportId) || request.ReportId.Length > 64)
+            {
+                _logger?.Warn("[IssueReportService] Delete: invalid ReportId.");
+                return;
+            }
+
+            if (!LogManager.DeleteReport(request.ReportId))
+                _logger?.Warn($"[IssueReportService] Delete: report {request.ReportId} not found.");
+        }
+
+        public void Post(SetReportStatusRequest request)
+        {
+            var allowed = new[] { "Acknowledged", "WorkingOnIt", "Fixed" };
+            if (string.IsNullOrWhiteSpace(request.ReportId) || request.ReportId.Length > 64
+                || !allowed.Contains(request.Status))
+            {
+                _logger?.Warn("[IssueReportService] SetStatus: invalid parameters.");
+                return;
+            }
+
+            if (LogManager.SetReportStatus(request.ReportId, request.Status))
+                PushUpdateToUser(request.ReportId);
+            else
+                _logger?.Warn($"[IssueReportService] SetStatus: report {request.ReportId} not found.");
         }
     }
 }

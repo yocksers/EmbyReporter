@@ -24,15 +24,72 @@ namespace EmbyReporter.Api
         public int? Take { get; set; }
     }
 
-    [Route(ApiRoutes.InjectScript, "POST", Summary = "Copies report.js into dashboard-ui and injects its script tag into index.html.")]
+    [Route(ApiRoutes.InjectScript, "POST", Summary = "Backs up and replaces actionsheet.js, deploys emby-reporter-badge.js, and injects its script tag into index.html.")]
     public class InjectScriptRequest : IReturn<ScriptInjectionResult> { }
 
-    [Route(ApiRoutes.RemoveScript, "POST", Summary = "Removes the report.js script tag from index.html and deletes the file.")]
+    [Route(ApiRoutes.RemoveScript, "POST", Summary = "Restores original actionsheet.js, deletes emby-reporter-badge.js, and removes its script tag from index.html.")]
     public class RemoveScriptRequest : IReturn<ScriptInjectionResult> { }
 
     public class ScriptInjectionResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
+    }
+
+    [Route(ApiRoutes.AdminReply, "POST", Summary = "Posts an admin reply to a reported issue.")]
+    public class AdminReplyRequest : IReturnVoid
+    {
+        public string ReportId { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+    }
+
+    [Route(ApiRoutes.UserResponse, "POST", Summary = "Posts a user confirmation or denial that a reported issue was fixed.")]
+    public class UserResponseRequest : IReturnVoid
+    {
+        public string ReportId { get; set; } = string.Empty;
+        public bool Confirmed { get; set; }
+        public string Text { get; set; } = string.Empty;
+    }
+
+    [Route(ApiRoutes.GetMyMessages, "GET", Summary = "Returns reports that have an unread admin reply for the current user.")]
+    public class GetMyMessagesRequest : IReturn<List<PendingReportDto>> { }
+
+    [Route(ApiRoutes.GetMyReports, "GET", Summary = "Returns all active reports for the current user.")]
+    public class GetMyReportsRequest : IReturn<List<PendingReportDto>> { }
+
+    [Route(ApiRoutes.UserComment, "POST", Summary = "Posts a free-form user comment on a report without changing its status.")]
+    public class UserCommentRequest : IReturnVoid
+    {
+        public string ReportId { get; set; } = string.Empty;
+        public string Text { get; set; } = string.Empty;
+    }
+
+    [Route(ApiRoutes.DeleteReport, "POST", Summary = "Deletes a specific issue report.")]
+    public class DeleteReportRequest : IReturnVoid
+    {
+        public string ReportId { get; set; } = string.Empty;
+    }
+
+    [Route(ApiRoutes.SetReportStatus, "POST", Summary = "Sets the admin status on a reported issue.")]
+    public class SetReportStatusRequest : IReturnVoid
+    {
+        public string ReportId { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+    }
+
+    public class PendingReportDto
+    {
+        public string ReportId { get; set; } = string.Empty;
+        public string ItemName { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public List<ChatMessageDto> Messages { get; set; } = new List<ChatMessageDto>();
+    }
+
+    public class ChatMessageDto
+    {
+        public string Sender { get; set; } = string.Empty;
+        public string Text { get; set; } = string.Empty;
+        public string Timestamp { get; set; } = string.Empty;
     }
 }
