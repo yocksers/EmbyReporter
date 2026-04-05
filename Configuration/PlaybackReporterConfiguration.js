@@ -50,6 +50,16 @@
 
     function renderLogs(view) {
         const container = view.querySelector('#logContainer');
+
+        const openReplies = {};
+        container.querySelectorAll('.er-reply-area').forEach(area => {
+            if (area.style.display !== 'none' && area.style.display !== '') {
+                const rid = area.getAttribute('data-reportid');
+                const ta = area.querySelector('.er-reply-text');
+                if (rid) openReplies[rid] = { text: ta ? ta.value : '', focused: ta === document.activeElement };
+            }
+        });
+
         getLogEvents().then(events => {
             if (events.length === 0) {
                 container.innerHTML = '<p>No playback issues have been reported yet.</p>';
@@ -79,11 +89,11 @@
                         const isAdmin = msg.Sender === 'admin';
                         const msgDate = msg.Timestamp ? new Date(msg.Timestamp).toLocaleString() : '';
                         if (isSystem) {
-                            chatHtml += `<div class="er-chat-system" style="text-align:center;color:#888;font-size:0.8em;padding:0.3em 0;font-style:italic;">`;
+                            chatHtml += `<div class="er-chat-system">`;
                             chatHtml += `${escapeHtml(msg.Text)}${msgDate ? ' &mdash; ' + msgDate : ''}`;
                             chatHtml += '</div>';
                         } else {
-                            const bg = isAdmin ? 'rgba(82,181,75,0.15)' : 'rgba(74,138,191,0.15)';
+                            const bg = isAdmin ? 'rgba(82,181,75,0.12)' : 'rgba(74,138,191,0.12)';
                             const border = isAdmin ? '#52B54B' : '#4a8abf';
                             const label = isAdmin ? 'Admin' : (entry.Username || 'User');
                             chatHtml += `<div class="er-chat-bubble" style="background:${bg};border-left:3px solid ${border};">`;
@@ -111,7 +121,7 @@
                 const statusControlHtml = reportId ? `
                     <div style="display:flex;gap:0.6em;align-items:center;flex-wrap:wrap;margin-top:0.7em;">
                         ${canReply ? `
-                        <select class="er-status-select" data-reportid="${reportId}" style="background:#2a2a2a;color:#ddd;border:1px solid #444;border-radius:4px;padding:0.3em 0.5em;font-size:0.85em;cursor:pointer;">
+                        <select class="er-status-select" data-reportid="${reportId}" style="border:1px solid rgba(128,128,128,0.4);border-radius:4px;padding:0.3em 0.5em;font-size:0.85em;cursor:pointer;">
                             <option value="">Set status&hellip;</option>
                             <option value="Acknowledged">Acknowledged</option>
                             <option value="WorkingOnIt">Working on it</option>
@@ -142,6 +152,22 @@
             `;
             }).join('');
             container.innerHTML = html;
+
+            Object.keys(openReplies).forEach(rid => {
+                const area = container.querySelector(`.er-reply-area[data-reportid="${rid}"]`);
+                if (!area) return;
+                const toggleBtn = container.querySelector(`.er-toggle-reply[data-reportid="${rid}"]`);
+                const ta = area.querySelector('.er-reply-text');
+                area.style.display = 'block';
+                if (toggleBtn) toggleBtn.style.display = 'none';
+                if (ta) {
+                    ta.value = openReplies[rid].text;
+                    if (openReplies[rid].focused) {
+                        ta.focus();
+                        ta.setSelectionRange(ta.value.length, ta.value.length);
+                    }
+                }
+            });
 
             container.querySelectorAll('.er-toggle-reply').forEach(btn => {
                 btn.addEventListener('click', () => {

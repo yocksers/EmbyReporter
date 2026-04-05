@@ -256,10 +256,12 @@
 
     function renderReportBlocks(box, reports, refreshCallback) {
         var savedDrafts = {};
+        var focusedReportId = null;
         box.querySelectorAll('.erb-report-block').forEach(function (b) {
             var rid = b.getAttribute('data-reportid');
             var ta = b.querySelector('.erb-response-text');
             if (rid && ta && ta.value) savedDrafts[rid] = ta.value;
+            if (rid && ta && ta === document.activeElement) focusedReportId = rid;
         });
 
         box.querySelectorAll('.erb-report-block').forEach(function (b) { b.parentNode.removeChild(b); });
@@ -270,20 +272,51 @@
             block.setAttribute('data-reportid', report.ReportId || '');
             block.style.cssText = 'border-top:1px solid #333;padding:1em 0;';
 
-            var title = document.createElement('div');
-            title.style.cssText = 'font-weight:bold;color:#ddd;margin-bottom:0.3em;';
-            title.textContent = report.ItemName || 'Unknown Item';
-            block.appendChild(title);
-
             var currentStatus = report.Status || 'Open';
             var statusLabel = STATUS_LABELS[currentStatus] || currentStatus;
             var statusColor = STATUS_COLORS[currentStatus] || '#666';
+            var needsAction = currentStatus === 'AwaitingUserResponse' || currentStatus === 'Fixed';
+            var canComment = currentStatus !== 'Confirmed';
+
+            var headerRow = document.createElement('div');
+            headerRow.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:0.7em;margin-bottom:0.3em;';
+
+            var titleWrap = document.createElement('div');
+
+            var title = document.createElement('div');
+            title.style.cssText = 'font-weight:bold;color:#ddd;margin-bottom:0.3em;';
+            title.textContent = report.ItemName || 'Unknown Item';
+            titleWrap.appendChild(title);
 
             var statusBadge = document.createElement('span');
             statusBadge.style.cssText = 'display:inline-block;background:' + statusColor +
                 ';color:#fff;font-size:0.72em;padding:0.2em 0.6em;border-radius:4px;margin-bottom:0.6em;';
             statusBadge.textContent = statusLabel;
-            block.appendChild(statusBadge);
+            titleWrap.appendChild(statusBadge);
+
+            headerRow.appendChild(titleWrap);
+
+            if (needsAction) {
+                var confirmBtn = document.createElement('button');
+                confirmBtn.className = 'erb-confirm-btn';
+                confirmBtn.textContent = 'Confirm Fixed \u2714';
+                confirmBtn.style.cssText = 'flex-shrink:0;padding:0.35em 0.8em;border:none;background:#52B54B;color:#fff;border-radius:4px;cursor:pointer;font-size:0.8em;font-family:inherit;white-space:nowrap;';
+                confirmBtn.addEventListener('click', function () {
+                    var reportId = block.getAttribute('data-reportid');
+                    var ta = block.querySelector('.erb-response-text');
+                    var commentText = ta ? ta.value.trim().slice(0, 500) : '';
+                    block.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+                    sendResponse(reportId, true, commentText).then(function () {
+                        block.innerHTML = '<div style="text-align:center;color:#52B54B;padding:0.8em 0;">Issue closed. Thank you!</div>';
+                        fetchMessages();
+                    }).catch(function () {
+                        block.querySelectorAll('button').forEach(function (b) { b.disabled = false; });
+                    });
+                });
+                headerRow.appendChild(confirmBtn);
+            }
+
+            block.appendChild(headerRow);
 
             if (report.Description) {
                 var desc = document.createElement('div');
@@ -319,9 +352,6 @@
                 block.appendChild(bubble);
             });
 
-            var needsAction = currentStatus === 'AwaitingUserResponse' || currentStatus === 'Fixed';
-            var canComment = currentStatus !== 'Confirmed';
-
             if (canComment) {
                 var textarea = document.createElement('textarea');
                 textarea.className = 'erb-response-text';
@@ -345,7 +375,7 @@
                 block.appendChild(textarea);
 
                 var btnRow = document.createElement('div');
-                btnRow.style.cssText = 'display:flex;gap:0.7em;flex-wrap:wrap;';
+                btnRow.style.cssText = 'display:flex;justify-content:flex-end;';
 
                 var sendBtn = document.createElement('button');
                 sendBtn.textContent = 'Send Comment';
@@ -365,32 +395,23 @@
                     });
                 });
 
-                if (needsAction) {
-                    var confirmBtn = document.createElement('button');
-                    confirmBtn.className = 'erb-confirm-btn';
-                    confirmBtn.textContent = 'Confirm Fixed - Close Issue';
-                    confirmBtn.style.cssText = 'flex:1;padding:0.55em;border:none;background:#52B54B;color:#fff;border-radius:4px;cursor:pointer;font-size:0.9em;font-family:inherit;';
-                    confirmBtn.addEventListener('click', function () {
-                        var reportId = block.getAttribute('data-reportid');
-                        var commentText = textarea.value.trim().slice(0, 500);
-                        block.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
-                        sendResponse(reportId, true, commentText).then(function () {
-                            block.innerHTML = '<div style="text-align:center;color:#52B54B;padding:0.8em 0;">Issue closed. Thank you!</div>';
-                            fetchMessages();
-                        }).catch(function () {
-                            block.querySelectorAll('button').forEach(function (b) { b.disabled = false; });
-                        });
-                    });
-                    btnRow.appendChild(confirmBtn);
-                }
-
                 btnRow.appendChild(sendBtn);
-
                 block.appendChild(btnRow);
             }
 
             box.appendChild(block);
         });
+
+        if (focusedReportId) {
+            var focusBlock = box.querySelector('.erb-report-block[data-reportid="' + focusedReportId + '"]');
+            if (focusBlock) {
+                var focusTa = focusBlock.querySelector('.erb-response-text');
+                if (focusTa) {
+                    focusTa.focus();
+                    focusTa.setSelectionRange(focusTa.value.length, focusTa.value.length);
+                }
+            }
+        }
     }
 
     function openDialog() {
